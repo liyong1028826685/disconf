@@ -81,12 +81,15 @@ public class StaticScannerNonAnnotationFileMgrImpl extends StaticScannerMgrImplB
         // file name
         disconfCenterFile.setFileName(fileName);
 
+        // 非注解式
+        disconfCenterFile.setIsTaggedWithNonAnnotationFile(true);
+
         // file type
         disconfCenterFile.setSupportFileTypeEnum(SupportFileTypeEnum.getByFileName(fileName));
 
         //
         // disConfCommonModel
-        DisConfCommonModel disConfCommonModel = makeDisConfCommonModel("", "");
+        DisConfCommonModel disConfCommonModel = makeDisConfCommonModel("", "", "");
         disconfCenterFile.setDisConfCommonModel(disConfCommonModel);
 
         // Remote URL

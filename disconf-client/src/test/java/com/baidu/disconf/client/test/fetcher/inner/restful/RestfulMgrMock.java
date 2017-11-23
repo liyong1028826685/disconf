@@ -4,7 +4,7 @@ import java.io.File;
 
 import org.apache.commons.io.FileUtils;
 
-import com.baidu.disconf.client.test.utils.DirUtils;
+import com.baidu.disconf.client.test.support.utils.DirUtils;
 import com.baidu.disconf.core.common.constants.Constants;
 import com.baidu.disconf.core.common.json.ValueVo;
 import com.baidu.disconf.core.common.restful.RestfulMgr;
@@ -60,7 +60,7 @@ public class RestfulMgrMock extends MockUp<RestfulMgr> {
      */
     @Mock
     public String downloadFromServer(RemoteUrl remoteUrl, String fileName, String localFileDir, String localFileDirTemp,
-                                     String copy2TargetDirPath, boolean download2Classpath, int retryTimes,
+                                     String targetDirPath, boolean download2Classpath, int retryTimes,
                                      int retrySleepSeconds)
             throws Exception {
 

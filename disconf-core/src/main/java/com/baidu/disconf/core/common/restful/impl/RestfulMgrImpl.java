@@ -50,7 +50,7 @@ public class RestfulMgrImpl implements RestfulMgr {
      */
     public <T> T getJsonData(Class<T> clazz, RemoteUrl remoteUrl, int retryTimes, int retrySleepSeconds)
             throws Exception {
-
+        Exception ex = null;
         for (URL url : remoteUrl.getUrls()) {
 
             // 可重试的下载
@@ -63,7 +63,7 @@ public class RestfulMgrImpl implements RestfulMgr {
                 return t;
 
             } catch (Exception e) {
-
+                ex = e;
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e1) {
@@ -72,14 +72,14 @@ public class RestfulMgrImpl implements RestfulMgr {
             }
         }
 
-        throw new Exception("cannot get: " + remoteUrl);
+        throw new Exception("cannot get: " + remoteUrl, ex);
     }
 
     /**
-     * @param remoteUrl          远程地址
-     * @param fileName           文件名
-     * @param localFileDir       本地文件地址
-     * @param copy2TargetDirPath 下载完后，还需要复制到此文件夹下
+     * @param remoteUrl         远程地址
+     * @param fileName          文件名
+     * @param localFileDir      本地文件地址
+     * @param targetDirPath     下载完后，配置文件指定的文件目录
      * @param retryTimes
      * @param retrySleepSeconds
      *
@@ -89,7 +89,7 @@ public class RestfulMgrImpl implements RestfulMgr {
      */
     @Override
     public String downloadFromServer(RemoteUrl remoteUrl, String fileName, String localFileDir, String localFileDirTemp,
-                                     String copy2TargetDirPath, boolean enableLocalDownloadDirInClassPath,
+                                     String targetDirPath, boolean enableLocalDownloadDirInClassPath,
                                      int retryTimes, int retrySleepSeconds)
             throws Exception {
 
@@ -110,12 +110,12 @@ public class RestfulMgrImpl implements RestfulMgr {
             localFile = transfer2SpecifyDir(tmpFilePathUniqueFile, localFileDir, fileName, false);
 
             // mv 到指定目录
-            if (copy2TargetDirPath != null) {
+            if (targetDirPath != null) {
 
                 //
-                if (enableLocalDownloadDirInClassPath == true || !copy2TargetDirPath.equals(ClassLoaderUtil.getClassPath
+                if (enableLocalDownloadDirInClassPath || !targetDirPath.equals(ClassLoaderUtil.getClassPath
                         ())) {
-                    localFile = transfer2SpecifyDir(tmpFilePathUniqueFile, copy2TargetDirPath, fileName, true);
+                    localFile = transfer2SpecifyDir(tmpFilePathUniqueFile, targetDirPath, fileName, true);
                 }
             }
 
@@ -130,7 +130,7 @@ public class RestfulMgrImpl implements RestfulMgr {
         // 判断是否下载失败
         //
 
-        if (!localFile.exists()) {
+        if (localFile == null || !localFile.exists()) {
             throw new Exception("target file cannot be found! " + fileName);
         }
 
@@ -139,12 +139,10 @@ public class RestfulMgrImpl implements RestfulMgr {
         //
 
         // 返回相对路径
-        if (localFileDir != null) {
-            String relativePathString = OsUtil.getRelativePath(localFile, new File(localFileDir));
-            if (relativePathString != null) {
-                if (new File(relativePathString).isFile()) {
-                    return relativePathString;
-                }
+        String relativePathString = OsUtil.getRelativePath(localFile, new File(localFileDir));
+        if (relativePathString != null) {
+            if (new File(relativePathString).isFile()) {
+                return relativePathString;
             }
         }
 
@@ -186,29 +184,24 @@ public class RestfulMgrImpl implements RestfulMgr {
      * copy/mv 到指定目录
      *
      * @param srcFile
-     * @param copy2TargetDirPath
+     * @param targetDirPath
      * @param fileName
      *
      * @return
      *
      * @throws Exception
      */
-    private File transfer2SpecifyDir(File srcFile, String copy2TargetDirPath, String fileName,
+    private File transfer2SpecifyDir(File srcFile, String targetDirPath, String fileName,
                                      boolean isMove) throws Exception {
 
         // make dir
-        OsUtil.makeDirs(copy2TargetDirPath);
+        OsUtil.makeDirs(targetDirPath);
 
-        File targetPath = new File(OsUtil.pathJoin(copy2TargetDirPath, fileName));
-        if (targetPath != null) {
-            // 从下载文件 复制/mv 到targetPath 原子性的做转移
-            OsUtil.transferFileAtom(srcFile, targetPath, isMove);
-            return targetPath;
+        File targetPath = new File(OsUtil.pathJoin(targetDirPath, fileName));
+        // 从下载文件 复制/mv 到targetPath 原子性的做转移
+        OsUtil.transferFileAtom(srcFile, targetPath, isMove);
+        return targetPath;
 
-        } else {
-            LOGGER.warn("targetPath is null, cannot transfer " + fileName + " to targetPath");
-            return null;
-        }
     }
 
     /**
@@ -223,7 +216,7 @@ public class RestfulMgrImpl implements RestfulMgr {
      */
     private Object retry4ConfDownload(RemoteUrl remoteUrl, File localTmpFile, int retryTimes, int sleepSeconds)
             throws Exception {
-
+        Exception ex = null;
         for (URL url : remoteUrl.getUrls()) {
 
             // 可重试的下载
@@ -234,7 +227,7 @@ public class RestfulMgrImpl implements RestfulMgr {
                 return retryStrategy.retry(unreliableImpl, retryTimes, sleepSeconds);
 
             } catch (Exception e) {
-
+                ex = e;
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e1) {
@@ -243,7 +236,7 @@ public class RestfulMgrImpl implements RestfulMgr {
             }
         }
 
-        throw new Exception("download failed.");
+        throw new Exception("download failed.", ex);
     }
 
 }
